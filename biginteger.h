@@ -402,7 +402,7 @@ Rational Rational::operator-() const {
   return negative_fraction;
 }
 void Rational::shortenFraction() {
-  numerator_.setSign(numerator_.isPositive() == denominator_.isPositive());
+  setSign(numerator_.isPositive() == denominator_.isPositive());
   denominator_.setSign(true);
   BigInteger gcd = GCD(numerator(), denominator());
   gcd.setSign(true);
