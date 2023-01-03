@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-enum Ordering { Higher = 1, Less = -1, Equal = 0 };
+enum Ordering { Greater = 1, Less = -1, Equal = 0 };
 
 class BigInteger {
 public:
@@ -134,7 +134,7 @@ BigInteger BigInteger::operator++(int) {
 
 std::strong_ordering BigInteger::operator<=>(const BigInteger &bigint) const {
   switch (absCmp(*this, bigint)) {
-  case Ordering::Higher:
+  case Ordering::Greater:
     return isPositive() ? std::strong_ordering::greater
                         : std::strong_ordering::less;
   case Ordering::Less:
@@ -186,13 +186,13 @@ BigInteger &BigInteger::operator+=(const BigInteger &bigint) {
     absAdd(bigint);
   } else {
     switch (absCmp(*this, bigint)) {
-    case 0:
+    case Ordering::Equal:
       *this = 0_bi;
       break;
-    case 1:
+    case Ordering::Greater:
       absSub(bigint);
       break;
-    case -1:
+    case Ordering::Less:
       BigInteger tmp(bigint);
       std::swap(*this, tmp);
       absSub(tmp);
@@ -322,14 +322,14 @@ int BigInteger::absCmp(const BigInteger &l_bi, const BigInteger &r_bi) {
     return Ordering::Less;
   }
   if (l_bi.length() > r_bi.length()) {
-    return Ordering::Higher;
+    return Ordering::Greater;
   }
   for (size_t i(l_bi.length() - 1); i != size_t(-1); --i) {
     if (l_bi.digits_[i] < r_bi.digits_[i]) {
       return Ordering::Less;
     }
     if (l_bi.digits_[i] > r_bi.digits_[i]) {
-      return Ordering::Higher;
+      return Ordering::Greater;
     }
   }
   return Ordering::Equal;
