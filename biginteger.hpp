@@ -358,8 +358,8 @@ BigInteger GCD(BigInteger l_bi, BigInteger r_bi) {
 class Rational {
 public:
   Rational() = default;
-  Rational(int num) : numerator_(num), denominator_(1) {}
-  Rational(const BigInteger &bigint) : numerator_(bigint), denominator_(1) {}
+  Rational(int num) : numerator_(num) {}
+  Rational(const BigInteger &bigint) : numerator_(bigint) {}
 
   explicit operator double() const { return std::stod(toString()); }
 
