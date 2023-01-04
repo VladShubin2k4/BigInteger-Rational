@@ -1,4 +1,4 @@
-#include "biginteger.h"
+#include "biginteger.hpp"
 
 int main() {
   BigInteger bi1, bi2;
