@@ -35,7 +35,6 @@ public:
   std::strong_ordering operator<=>(const BigInteger &bigint) const;
 
   [[nodiscard]] std::vector<int> &digits() { return digits_; }
-  [[nodiscard]] const std::vector<int> &digits() const { return digits_; }
 
   [[nodiscard]] std::string toString() const;
 
@@ -53,6 +52,7 @@ private:
   bool is_positive_{true};
   std::vector<int> digits_;
 
+  [[nodiscard]] const std::vector<int> &digits() const { return digits_; }
   [[nodiscard]] size_t len() const { return digits_.size(); }
   [[nodiscard]] bool isZero() const {
     return digits_.empty() || (len() == 1 && digits_[0] == 0);
@@ -366,10 +366,9 @@ public:
   [[nodiscard]] bool isPositive() const { return numerator_.isPositive(); }
   Rational operator-() const;
 
-  BigInteger &numerator() { return numerator_; }
-  BigInteger &denominator() { return denominator_; }
-  [[nodiscard]] const BigInteger &numerator() const { return numerator_; }
-  [[nodiscard]] const BigInteger &denominator() const { return denominator_; }
+  [[nodiscard]] std::pair<BigInteger, BigInteger> fraction() const {
+    return {numerator_, denominator_};
+  }
 
   std::strong_ordering operator<=>(const Rational &rat) const;
 
@@ -401,24 +400,20 @@ Rational Rational::operator-() const {
 void Rational::shortenFraction() {
   setSign(numerator_.isPositive() == denominator_.isPositive());
   denominator_.setSign(true);
-  BigInteger gcd = GCD(numerator(), denominator());
+  BigInteger gcd = GCD(numerator_, denominator_);
   gcd.setSign(true);
   numerator_ /= gcd;
   denominator_ /= gcd;
 }
 
 std::strong_ordering Rational::operator<=>(const Rational &rat) const {
-  BigInteger l_rat_num = numerator() * rat.denominator();
-  BigInteger r_rat_num = rat.numerator() * denominator();
+  BigInteger l_rat_num = numerator_ * rat.denominator_;
+  BigInteger r_rat_num = rat.numerator_ * denominator_;
   return l_rat_num < r_rat_num ? std::strong_ordering::less
                                : std::strong_ordering::greater;
 }
 bool operator==(const Rational &l_rat, const Rational &r_rat) {
-  if (l_rat.numerator() == 0_bi && r_rat.numerator() == 0_bi) {
-    return true;
-  }
-  return l_rat.numerator() == r_rat.numerator() &&
-         l_rat.denominator() == r_rat.denominator();
+  return l_rat.fraction() == r_rat.fraction();
 }
 
 Rational &Rational::operator+=(const Rational &fraction) {
