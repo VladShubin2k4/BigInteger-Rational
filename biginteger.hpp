@@ -15,6 +15,8 @@ class BigInteger {
   BigInteger() = default;
   BigInteger(int n) : is_positive_(n >= 0), digits_(1, std::abs(n)) {}
 
+  void reverse() { std::reverse(digits_.begin(), digits_.end()); }
+
   explicit operator bool() const { return !isZero(); }
 
   [[nodiscard]] bool isPositive() const { return is_positive_; }
@@ -24,7 +26,7 @@ class BigInteger {
   BigInteger& operator+=(const BigInteger& added);
   BigInteger& operator-=(const BigInteger& subtrahend);
   BigInteger& operator*=(const BigInteger& multiplier);
-  BigInteger& operator/=(const BigInteger& divider);
+  BigInteger& operator/=(const BigInteger& divisor);
   BigInteger& operator%=(const BigInteger& mod);
 
   BigInteger& operator--();
@@ -33,8 +35,6 @@ class BigInteger {
   BigInteger operator++(int);
 
   std::strong_ordering operator<=>(const BigInteger& bigint) const;
-
-  [[nodiscard]] std::vector<int>& digits() { return digits_; }
 
   [[nodiscard]] std::string toString() const;
 
@@ -52,7 +52,6 @@ class BigInteger {
   bool is_positive_{true};
   std::vector<int> digits_;
 
-  [[nodiscard]] const std::vector<int>& digits() const { return digits_; }
   [[nodiscard]] size_t len() const { return digits_.size(); }
   [[nodiscard]] bool isZero() const {
     return digits_.empty() || (len() == 1 && digits_[0] == 0);
@@ -70,11 +69,13 @@ class BigInteger {
   void removeLeadingZeros();
 };
 
-BigInteger operator ""_bi(unsigned long long bigint) {
+BigInteger operator ""_bi(unsigned long long ull) {
   BigInteger num;
-  for (long long radix(BigInteger::radix()); bigint > 0; bigint /= radix) {
-    num.digits().emplace_back(bigint % radix);
+  for (long long radix(BigInteger::radix()); ull > 0; ull /= radix) {
+    num *= BigInteger::radix();
+    num += static_cast<int>(ull % radix);
   }
+  num.reverse();
   return num;
 }
 
@@ -187,7 +188,7 @@ BigInteger& BigInteger::operator+=(const BigInteger& added) {
   } else {
     switch (absCmp(*this, added)) {
       case Ordering::Equal:
-        *this = 0_bi;
+        *this = 0;
         break;
       case Ordering::Greater:
         absSub(added);
@@ -215,9 +216,9 @@ BigInteger& BigInteger::operator*=(const BigInteger& multiplier) {
   removeLeadingZeros();
   return *this;
 }
-BigInteger& BigInteger::operator/=(const BigInteger& divider) {
-  bool new_is_positive(isPositive() == divider.isPositive());
-  absDiv(divider);
+BigInteger& BigInteger::operator/=(const BigInteger& divisor) {
+  bool new_is_positive(isPositive() == divisor.isPositive());
+  absDiv(divisor);
   setSign(new_is_positive);
   removeLeadingZeros();
   return *this;
@@ -233,7 +234,7 @@ void BigInteger::absAdd(const BigInteger& bigint) {
     if (i == digits_.size()) {
       digits_.emplace_back(0);
     }
-    digits_[i] += (i < bigint.len() ? bigint.digits()[i] : 0) + overflow;
+    digits_[i] += (i < bigint.len() ? bigint.digits_[i] : 0) + overflow;
     overflow = static_cast<int>(digits_[i] >= radix());
     digits_[i] -= overflow > 0 ? radix() : 0;
   }
