@@ -19,7 +19,6 @@ class BigInteger {
 
   explicit operator bool() const { return !isZero(); }
 
-  [[nodiscard]] bool isPositive() const { return is_positive_; }
   void setSign(bool is_positive) { is_positive_ = isZero() || is_positive; }
   BigInteger operator-() const;
 
@@ -86,7 +85,7 @@ void BigInteger::swap(BigInteger& l_bi, BigInteger& r_bi) {
 
 BigInteger BigInteger::operator-() const {
   BigInteger negative_bi(*this);
-  negative_bi.setSign(!isPositive());
+  negative_bi.setSign(!is_positive_);
   return negative_bi;
 }
 
@@ -136,18 +135,18 @@ BigInteger BigInteger::operator++(int) {
 std::strong_ordering BigInteger::operator<=>(const BigInteger& bigint) const {
   switch (absCmp(*this, bigint)) {
     case Ordering::Greater:
-      return isPositive() ? std::strong_ordering::greater
+      return is_positive_ ? std::strong_ordering::greater
                           : std::strong_ordering::less;
     case Ordering::Less:
-      if (isPositive() == bigint.isPositive()) {
-        return isPositive() ? std::strong_ordering::less
+      if (is_positive_ == bigint.is_positive_) {
+        return is_positive_ ? std::strong_ordering::less
                             : std::strong_ordering::greater;
       }
-      return isPositive() ? std::strong_ordering::greater
+      return is_positive_ ? std::strong_ordering::greater
                           : std::strong_ordering::less;
   }
-  if (isPositive() != bigint.isPositive()) {
-    return isPositive() ? std::strong_ordering::greater
+  if (is_positive_ != bigint.is_positive_) {
+    return is_positive_ ? std::strong_ordering::greater
                         : std::strong_ordering::less;
   }
   return std::strong_ordering::equal;
@@ -183,7 +182,7 @@ BigInteger operator%(const BigInteger& l_bi, const BigInteger& r_bi) {
 }
 
 BigInteger& BigInteger::operator+=(const BigInteger& added) {
-  if (isPositive() == added.isPositive()) {
+  if (is_positive_ == added.is_positive_) {
     absAdd(added);
   } else {
     switch (absCmp(*this, added)) {
@@ -204,20 +203,20 @@ BigInteger& BigInteger::operator+=(const BigInteger& added) {
   return *this;
 }
 BigInteger& BigInteger::operator-=(const BigInteger& subtrahend) {
-  setSign(!isPositive());
+  setSign(!is_positive_);
   *this += subtrahend;
-  setSign(!isPositive());
+  setSign(!is_positive_);
   return *this;
 }
 BigInteger& BigInteger::operator*=(const BigInteger& multiplier) {
-  bool new_is_positive(isPositive() == multiplier.isPositive());
+  bool new_is_positive(is_positive_ == multiplier.is_positive_);
   absMul(multiplier);
   setSign(new_is_positive);
   removeLeadingZeros();
   return *this;
 }
 BigInteger& BigInteger::operator/=(const BigInteger& divisor) {
-  bool new_is_positive(isPositive() == divisor.isPositive());
+  bool new_is_positive(is_positive_ == divisor.is_positive_);
   absDiv(divisor);
   setSign(new_is_positive);
   removeLeadingZeros();
@@ -283,7 +282,7 @@ void BigInteger::absDiv(const BigInteger& divider) {
     int enough_mul = findEnoughMultiplier(incomplete_divisible, divider);
     quotient += enough_mul;
     incomplete_divisible -=
-        (divider.isPositive() ? divider : -divider) * enough_mul;
+        (divider.is_positive_ ? divider : -divider) * enough_mul;
   }
   swap(*this, quotient);
 }
@@ -293,7 +292,7 @@ std::string BigInteger::toString() const {
     return "0";
   }
   std::stringstream bi_stream;
-  if (!isPositive()) {
+  if (!is_positive_) {
     bi_stream << '-';
   }
   bi_stream << digits_.back();
@@ -364,7 +363,6 @@ class Rational {
 
   explicit operator double() const { return std::stod(toString()); }
 
-  [[nodiscard]] bool isPositive() const { return numerator_.isPositive(); }
   Rational operator-() const;
 
   [[nodiscard]] std::pair<BigInteger, BigInteger> fraction() const {
@@ -395,11 +393,11 @@ class Rational {
 
 Rational Rational::operator-() const {
   Rational negative_fraction(*this);
-  negative_fraction.setSign(!isPositive());
+  negative_fraction.setSign(!(numerator_ >= 0));
   return negative_fraction;
 }
 void Rational::shortenFraction() {
-  setSign(numerator_.isPositive() == denominator_.isPositive());
+  setSign(numerator_ >= 0 == denominator_ >= 0);
   denominator_.setSign(true);
   BigInteger gcd = GCD(numerator_, denominator_);
   gcd.setSign(true);
@@ -423,9 +421,9 @@ Rational& Rational::operator+=(const Rational& fraction) {
   return *this;
 }
 Rational& Rational::operator-=(const Rational& subtrahend) {
-  setSign(!isPositive());
+  setSign(!(numerator_ >= 0));
   *this += subtrahend;
-  setSign(!isPositive());
+  setSign(!(numerator_ >= 0));
   return *this;
 }
 Rational& Rational::operator*=(const Rational& multiplier) {
@@ -464,7 +462,7 @@ Rational operator/(const Rational& l_rat, const Rational& r_rat) {
 
 std::string Rational::asDecimal(size_t precision) const {
   size_t boost(precision);
-  BigInteger num(isPositive() ? numerator_ : -numerator_);
+  BigInteger num(numerator_ >= 0 ? numerator_ : -numerator_);
   BigInteger precision_boost(1);
   while (boost-- > 0) {
     precision_boost *= BigInteger::base();
@@ -476,7 +474,7 @@ std::string Rational::asDecimal(size_t precision) const {
   if (precision == 0) {
     return num.toString();
   }
-  std::string dec_str(!isPositive() ? 1 : 0, '-');
+  std::string dec_str(!(numerator_ >= 0) ? 1 : 0, '-');
   dec_str += num.toString();
   dec_str.push_back('.');
   dec_str += std::string(precision - leftover.toString().length(), '0');
