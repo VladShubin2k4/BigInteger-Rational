@@ -15,8 +15,6 @@ class BigInteger {
   BigInteger() = default;
   BigInteger(int n) : is_positive_(n >= 0), digits_(1, std::abs(n)) {}
 
-  void reverse() { std::reverse(digits_.begin(), digits_.end()); }
-
   explicit operator bool() const { return !isZero(); }
 
   void setSign(bool is_positive) { is_positive_ = isZero() || is_positive; }
@@ -39,6 +37,7 @@ class BigInteger {
 
   [[nodiscard]] static int radix() { return kRadix; }
   [[nodiscard]] static int base() { return kBase; }
+  [[maybe_unused]] [[nodiscard]] static int pow() { return kPow; }
 
   static void swap(BigInteger& l_bi, BigInteger& r_bi);
 
@@ -69,12 +68,12 @@ class BigInteger {
 };
 
 BigInteger operator ""_bi(unsigned long long ull) {
+  std::string digits(std::to_string(ull));
   BigInteger num;
-  for (long long radix(BigInteger::radix()); ull > 0; ull /= radix) {
-    num *= BigInteger::radix();
-    num += static_cast<int>(ull % radix);
+  for (char digit : digits) {
+    num *= BigInteger::base();
+    num += static_cast<int>(digit - '0');
   }
-  num.reverse();
   return num;
 }
 
@@ -90,7 +89,7 @@ BigInteger BigInteger::operator-() const {
 }
 
 std::istream& operator>>(std::istream& bi_in, BigInteger& bigint) {
-  bigint = 0_bi;
+  bigint = 0;
   char digit;
   bi_in.get(digit);
   while (!bi_in.eof() && std::isspace(digit) != 0) {
@@ -114,7 +113,7 @@ std::ostream& operator<<(std::ostream& bi_out, const BigInteger& bigint) {
 }
 
 BigInteger& BigInteger::operator--() {
-  *this -= 1_bi;
+  *this -= 1;
   return *this;
 }
 BigInteger BigInteger::operator--(int) {
@@ -123,7 +122,7 @@ BigInteger BigInteger::operator--(int) {
   return copy;
 }
 BigInteger& BigInteger::operator++() {
-  *this += 1_bi;
+  *this += 1;
   return *this;
 }
 BigInteger BigInteger::operator++(int) {
@@ -291,17 +290,14 @@ std::string BigInteger::toString() const {
   if (isZero()) {
     return "0";
   }
-  std::stringstream bi_stream;
-  if (!is_positive_) {
-    bi_stream << '-';
-  }
-  bi_stream << digits_.back();
-  char fill_null = bi_stream.fill('0');
+  std::stringstream stream;
+  !is_positive_ ? stream << '-' << digits_.back() : stream << digits_.back();
+  char fill_null = stream.fill('0');
   for (long long i(static_cast<long long>(len()) - 2LL); i >= 0; --i) {
-    bi_stream << std::setw(kPow) << digits_[i];
+    stream << std::setw(kPow) << digits_[i];
   }
-  bi_stream.fill(fill_null);
-  return bi_stream.str();
+  stream.fill(fill_null);
+  return stream.str();
 }
 void BigInteger::removeLeadingZeros() {
   while (len() > 1 && digits_.back() == 0) {
@@ -365,10 +361,6 @@ class Rational {
 
   Rational operator-() const;
 
-  [[nodiscard]] std::pair<BigInteger, BigInteger> fraction() const {
-    return {numerator_, denominator_};
-  }
-
   std::strong_ordering operator<=>(const Rational& rat) const;
 
   Rational& operator+=(const Rational& fraction);
@@ -412,7 +404,7 @@ std::strong_ordering Rational::operator<=>(const Rational& rat) const {
                                : std::strong_ordering::greater;
 }
 bool operator==(const Rational& l_rat, const Rational& r_rat) {
-  return l_rat.fraction() == r_rat.fraction();
+  return l_rat.toString() == r_rat.toString();
 }
 
 Rational& Rational::operator+=(const Rational& fraction) {
@@ -483,7 +475,7 @@ std::string Rational::asDecimal(size_t precision) const {
 }
 std::string Rational::toString() const {
   std::string fraction(numerator_.toString());
-  if (numerator_ % denominator_ != 0_bi) {
+  if (numerator_ % denominator_ != 0) {
     fraction.push_back('/');
     fraction += denominator_.toString();
   }
