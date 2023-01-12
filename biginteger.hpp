@@ -39,7 +39,7 @@ class BigInteger {
   [[nodiscard]] static int base() { return kBase; }
   [[maybe_unused]] [[nodiscard]] static int pow() { return kPow; }
 
-  static void swap(BigInteger& l_bi, BigInteger& r_bi);
+  void swap(BigInteger& bigint);
 
   ~BigInteger() = default;
 
@@ -77,9 +77,9 @@ BigInteger operator ""_bi(unsigned long long ull) {
   return num;
 }
 
-void BigInteger::swap(BigInteger& l_bi, BigInteger& r_bi) {
-  std::swap(l_bi.digits_, r_bi.digits_);
-  std::swap(l_bi.is_positive_, r_bi.is_positive_);
+void BigInteger::swap(BigInteger& bigint) {
+  digits_.swap(bigint.digits_);
+  std::swap(is_positive_, bigint.is_positive_);
 }
 
 BigInteger BigInteger::operator-() const {
@@ -193,7 +193,7 @@ BigInteger& BigInteger::operator+=(const BigInteger& added) {
         break;
       case Ordering::Less:
         BigInteger tmp(added);
-        std::swap(*this, tmp);
+        swap(tmp);
         absSub(tmp);
         break;
     }
@@ -266,7 +266,7 @@ void BigInteger::absMul(const BigInteger& multiplier) {
     composition.digits_.emplace_back(overflow % radix());
     overflow /= radix();
   }
-  swap(*this, composition);
+  swap(composition);
 }
 void BigInteger::absDiv(const BigInteger& divider) {
   BigInteger quotient;
@@ -283,7 +283,7 @@ void BigInteger::absDiv(const BigInteger& divider) {
     incomplete_divisible -=
         (divider.is_positive_ ? divider : -divider) * enough_mul;
   }
-  swap(*this, quotient);
+  swap(quotient);
 }
 
 std::string BigInteger::toString() const {
@@ -346,7 +346,7 @@ int BigInteger::findEnoughMultiplier(const BigInteger& incomplete_divisible,
 BigInteger GCD(BigInteger l_bi, BigInteger r_bi) {
   while (r_bi) {
     l_bi %= r_bi;
-    BigInteger::swap(l_bi, r_bi);
+    l_bi.swap(r_bi);
   }
   return l_bi;
 }
